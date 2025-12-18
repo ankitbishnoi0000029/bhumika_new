@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Heading } from "../ui/heading";
 import { ToolCard } from "../ui/toolcard";
 import { useRouter } from "next/navigation";
-import { dataType } from "./base64-tools";
+import { dataType } from "@/utils/types/uiTypes";
 import { getTableData } from "@/actions/dbAction";
 
 export function NewFun() {

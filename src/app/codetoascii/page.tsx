@@ -1,6 +1,6 @@
 
 import CodeToAscii from "@/components/sections/code-to-ascii";
 
-export  function textToAsciiArray() {
+export default function CodeToAsciiPage() {
   return <CodeToAscii />;
 }

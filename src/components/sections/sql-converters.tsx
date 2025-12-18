@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Download, Settings, Palette } from "lucide-react";
 import { getTableData } from "@/actions/dbAction";
-import { dataType } from "./base64-tools";
+import { dataType } from "@/utils/types/uiTypes";
 
 
 export function SqlConverter() {

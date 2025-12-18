@@ -191,7 +191,7 @@ export default function AdminPanel() {
   const getDetails = async (id: string) => {
     setActiveCategory(id);
     // alert(id)
-    const data: any[] = await getTableData(id);
+    const data = await getTableData(id) as any[];
     // Map database result to Tool[]
     const mappedTools: Tool[] = data.map((item: any) => ({
       id: item.id,
@@ -208,7 +208,7 @@ export default function AdminPanel() {
   };
 
 
-const handleEdit =(tooldata)=>{
+const handleEdit =(tooldata: Tool)=>{
       openModal();
       console.log(tooldata)
 }

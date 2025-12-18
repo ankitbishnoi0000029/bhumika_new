@@ -1,4 +1,3 @@
-"use client"
 import { ImageTools } from "@/components/sections/image-tools"
 import type { Metadata } from "next";
 

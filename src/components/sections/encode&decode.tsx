@@ -12,7 +12,7 @@ import { Palette, Settings } from "lucide-react";
 import { encode as base32Encode, decode as base32Decode } from "hi-base32";
 import bs58 from "bs58";
 import { getTableData } from "@/actions/dbAction";
-import { dataType } from "./base64-tools";
+import { dataType } from "@/utils/types/uiTypes";
 import { useRouter } from "next/navigation";
 
 

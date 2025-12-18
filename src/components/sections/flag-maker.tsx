@@ -2,17 +2,74 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Download, Upload } from 'lucide-react';
 
+interface BaseLayer {
+  id: number;
+  type: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: string;
+  rotation?: number;
+}
+
+interface RectLayer extends BaseLayer {
+  type: 'rect';
+}
+
+interface CircleLayer extends BaseLayer {
+  type: 'circle';
+}
+
+interface StarLayer extends BaseLayer {
+  type: 'star';
+}
+
+interface TriangleLayer extends BaseLayer {
+  type: 'triangle';
+}
+
+interface TextLayer extends BaseLayer {
+  type: 'text';
+  text: string;
+  fontSize: number;
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+}
+
+interface ImageLayer extends BaseLayer {
+  type: 'image';
+  img: HTMLImageElement;
+}
+
+type Layer = RectLayer | CircleLayer | StarLayer | TriangleLayer | TextLayer | ImageLayer;
+
+interface FlagTemplate {
+  name: string;
+  layers: Array<{
+    type: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    color: string;
+  }>;
+}
+
 const FlagMaker = () => {
-  const canvasRef = useRef(null);
-  const downloadCanvasRef = useRef(null);
-  const [layers, setLayers] = useState([
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const downloadCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const bgInputRef = useRef<HTMLInputElement | null>(null);
+  const shapeInputRef = useRef<HTMLInputElement | null>(null);
+  const [layers, setLayers] = useState<Layer[]>([
     { id: 1, type: 'rect', x: 0, y: 0, width: 33.33, height: 100, color: '#0066cc' },
     { id: 2, type: 'rect', x: 33.33, y: 0, width: 33.33, height: 100, color: '#ffffff' },
     { id: 3, type: 'rect', x: 66.66, y: 0, width: 33.34, height: 100, color: '#ffdd00' }
   ]);
-  const [selectedLayer, setSelectedLayer] = useState(null);
+  const [selectedLayer, setSelectedLayer] = useState<number | null>(null);
   const [bgColor, setBgColor] = useState('#cccccc');
-  const [bgImage, setBgImage] = useState(null);
+  const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
   const [text, setText] = useState('');
   const [textSize, setTextSize] = useState(12);
   const [textStyle, setTextStyle] = useState({ bold: false, italic: false, underline: false, color: '#000000' });
@@ -20,8 +77,6 @@ const FlagMaker = () => {
   const [width, setWidth] = useState(500);
   const [height, setHeight] = useState(300);
   const [activeTab, setActiveTab] = useState('Flags');
-  const bgInputRef = useRef(null);
-  const shapeInputRef = useRef(null);
   const [nextId, setNextId] = useState(4);
 
   const flags = [
@@ -65,7 +120,8 @@ const FlagMaker = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    
+    if (!ctx) return;
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     if (bgImage) {
@@ -134,7 +190,7 @@ const FlagMaker = () => {
     });
   };
 
-  const drawStar = (ctx, cx, cy, spikes, outerRadius, innerRadius) => {
+  const drawStar = (ctx: CanvasRenderingContext2D, cx: number, cy: number, spikes: number, outerRadius: number, innerRadius: number) => {
     let rot = Math.PI / 2 * 3;
     const step = Math.PI / spikes;
     ctx.beginPath();
@@ -149,8 +205,9 @@ const FlagMaker = () => {
     ctx.closePath();
   };
 
-  const handleCanvasClick = (e) => {
+  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
+    if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
@@ -165,8 +222,8 @@ const FlagMaker = () => {
     setSelectedLayer(null);
   };
 
-  const loadFlag = (flag) => {
-    const newLayers = flag.layers.map((l, i) => ({ ...l, id: nextId + i }));
+  const loadFlag = (flag: FlagTemplate) => {
+    const newLayers = flag.layers.map((l, i) => ({ ...l, id: nextId + i })) as Layer[];
     setLayers(newLayers);
     setNextId(nextId + newLayers.length);
     setSelectedLayer(null);
@@ -175,7 +232,7 @@ const FlagMaker = () => {
 
   const addText = () => {
     if (text.trim()) {
-      const newLayer = {
+      const newLayer: TextLayer = {
         id: nextId,
         type: 'text',
         text: text,
@@ -196,7 +253,7 @@ const FlagMaker = () => {
     }
   };
 
-  const updateLayer = (updates) => {
+  const updateLayer = (updates: Record<string, any>) => {
     if (selectedLayer) {
       setLayers(layers.map(l => l.id === selectedLayer ? { ...l, ...updates } : l));
     }
@@ -211,8 +268,10 @@ const FlagMaker = () => {
 
   const downloadFlag = () => {
     const canvas = downloadCanvasRef.current;
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    
+    if (!ctx) return;
+
     canvas.width = width;
     canvas.height = height;
     
@@ -271,27 +330,27 @@ const FlagMaker = () => {
     link.click();
   };
 
-  const handleBgUpload = (e) => {
-    const file = e.target.files[0];
+  const handleBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
         const img = new Image();
         img.onload = () => setBgImage(img);
-        img.src = event.target.result;
+        img.src = event.target?.result as string;
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleShapeUpload = (e) => {
-    const file = e.target.files[0];
+  const handleShapeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
         const img = new Image();
         img.onload = () => {
-          const newLayer = {
+          const newLayer: ImageLayer = {
             id: nextId,
             type: 'image',
             img: img,
@@ -299,12 +358,13 @@ const FlagMaker = () => {
             y: 25,
             width: 20,
             height: 20,
-            rotation: 0
+            rotation: 0,
+            color: '#000000'
           };
           setLayers([...layers, newLayer]);
           setNextId(nextId + 1);
         };
-        img.src = event.target.result;
+        img.src = event.target?.result as string;
       };
       reader.readAsDataURL(file);
     }
@@ -314,8 +374,8 @@ const FlagMaker = () => {
     const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffffff', '#000000', '#ff9933', '#138808'];
     const count = Math.floor(Math.random() * 4) + 2;
     const horizontal = Math.random() > 0.5;
-    
-    const newLayers = [];
+
+    const newLayers: RectLayer[] = [];
     for (let i = 0; i < count; i++) {
       if (horizontal) {
         newLayers.push({
