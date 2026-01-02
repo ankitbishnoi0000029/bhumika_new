@@ -41,14 +41,23 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
+  let categoriesData: Category[] = [];
+  let subcategoriesData: Subcategory[] = [];
 
-  const categoriesData = await getTableData("categories") as Category[];
-  const subcategoriesData = await getTableData("subcategories") as Subcategory[];
+  try {
+    categoriesData = await getTableData("categories") as Category[];
+    subcategoriesData = await getTableData("subcategories") as Subcategory[];
+  } catch (error) {
+    console.warn("Database connection failed during build, using fallback data:", error);
+    // Provide fallback empty arrays to prevent build failure
+    categoriesData = [];
+    subcategoriesData = [];
+  }
 
   return (
     <main className="container mx-auto">
       <SubNavbar categoriesData={categoriesData} subcategoriesData={subcategoriesData} />
-      <WelcomePage /> 
+      <WelcomePage />
       <Popular />
       {/* <NewFun /> */}
       <TrendingTools/>
