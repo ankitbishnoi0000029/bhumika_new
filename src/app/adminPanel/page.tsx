@@ -1,5 +1,4 @@
 import AdminPanel from '@/components/admin/adminPanel'
-import React from 'react'
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

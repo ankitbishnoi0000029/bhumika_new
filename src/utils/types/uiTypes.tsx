@@ -23,7 +23,7 @@ export type HeadingProps = {
   }
 
   export interface fromDataType{
-     id: number;
+     id?: number;
     url_id?: string;
     name? : string ;
     urlName?: string;

@@ -62,11 +62,27 @@ export default function AdminPanel() {
   };
 
   const closeModal = () => {
-    setFormData(undefined);
-    setMata(undefined);
+    setFormData({
+      id: undefined,
+      url_id: '',
+      name: '',
+      urlName: '',
+      des: '',
+      keyword: '',
+      category: '',
+      metaData: '',
+      route: '',
+      url: '',
+    });
+    setMata({
+      title: '',
+      description: '',
+      keywords: '',
+    });
     setMode('');
     setIsModalOpen(false);
   };
+  console.log(formData);
   const handleSubmit = async () => {
     setLoading(true);
     const updatedFormData = {
@@ -141,6 +157,24 @@ export default function AdminPanel() {
   };
   const handleAdd = () => {
     setMode('add');
+    // Initialize form data for adding new tool
+    setFormData({
+      id: undefined,
+      url_id: '',
+      name: '',
+      urlName: '',
+      des: '',
+      keyword: '',
+      category: '',
+      metaData: '',
+      route: '',
+      url: '',
+    });
+    setMata({
+      title: '',
+      description: '',
+      keywords: '',
+    });
     openModal();
   };
   // const getCategoryName = (id: string) => categories.find((c) => c.id === id)?.name || id;

@@ -1,9 +1,7 @@
 // next.config.js
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  turbopack: {},
   webpack: (config: any, { isServer }: any) => {
     if (!isServer) {
       config.resolve.fallback = {
