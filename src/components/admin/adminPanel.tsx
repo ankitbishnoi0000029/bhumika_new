@@ -1,51 +1,21 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import {
-  Plus,
-  Edit2,
-  Trash2,
-  X,
-  Search,
-  Menu,
-  Link2,
-  TrendingUp,
-  Sparkles,
-  Code,
-  DollarSign,
-  Home,
-  Wrench,
-  Shield,
-  FileText,
-  Layers,
-  Braces,
-  Database,
-  Image,
-  LucideIcon,
-  FlameKindling,
-} from "lucide-react";
-import { getTableData } from "@/actions/dbAction";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../ui/dialog";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
-import { Textarea } from "../ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
+import React, { useEffect, useState } from 'react';
+import { Plus, Edit2, Menu, Trash2Icon, ExternalLink, FolderCodeIcon, Loader2 } from 'lucide-react';
+import { addNewRecord, getTableData, updateRecord } from '@/actions/dbAction';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Input } from '../ui/input';
+import { Button } from '../ui/button';
+import { Textarea } from '../ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { fromDataType, MetaData } from '@/utils/types/uiTypes';
+import { categories } from '@/utils/consitants/consitaint';
+import Link from 'next/link';
+import { toast } from 'sonner';
 
 interface Tool {
   id: number;
-  u_Id: string;
+  url_id: string;
   name: string;
   url: string;
   des: string;
@@ -53,168 +23,135 @@ interface Tool {
   category: string;
 }
 
-interface CategoryItem {
-  id: string;
-  name: string;
-  icon: LucideIcon;
-}
-
-const categories: CategoryItem[] = [
-  { id: "header", name: "Header", icon: FlameKindling },
-
-  { id: "popular", name: "Popular Tools", icon: TrendingUp },
-  { id: "trendingtools", name: "Trending Tools", icon: Sparkles },
-
-  { id: "developertools", name: "Developer Tools", icon: Code },
-  { id: "utility", name: "Utility Tools", icon: Wrench },
-
-  { id: "encode_decode", name: "Encode / Decode", icon: Shield },
-  { id: "base64_tools", name: "Base64 Tools", icon: Layers },
-
-  { id: "html_converters", name: "HTML Converters", icon: FileText },
-  { id: "json_converters", name: "JSON Converters", icon: Braces },
-  { id: "xml_converters", name: "XML Converters", icon: FileText },
-  { id: "yaml_converters", name: "YAML Converters", icon: FileText },
-
-  { id: "sql_converters", name: "SQL Converters", icon: Database },
-  // { id: "sql_url", name: "SQL URL Tools", icon: Link2 },
-
-  { id: "image_tools", name: "Image Tools", icon: Image },
-
-  { id: "urltometa", name: "URL to Meta", icon: Link2 },
-
-  { id: "categories", name: "Categories", icon: Menu },
-  { id: "subcategories", name: "Sub Categories", icon: Menu },
-
-  { id: "navbar", name: "Navbar", icon: Menu },
-  { id: "sunnavbar", name: "Sub Navbar", icon: Menu },
-
-  { id: "nf", name: "New Features", icon: Sparkles },
-];
-
 export default function AdminPanel() {
-  /* ===================== THEME ===================== */
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") as "light" | "dark";
+    getDetails('popular');
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
     if (savedTheme) {
       setTheme(savedTheme);
-      document.documentElement.classList.toggle("dark", savedTheme === "dark");
+      document.documentElement.classList.toggle('dark', savedTheme === 'dark');
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("theme", theme);
-    document.documentElement.classList.toggle("dark", theme === "dark");
+    localStorage.setItem('theme', theme);
+    document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light");
+    setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
   /* ===================== STATE ===================== */
-  const [tools, setTools] = useState<Tool[]>([]);
+  const [tools, setTools] = useState<fromDataType[]>([]);
 
-  const [activeCategory, setActiveCategory] = useState("Header");
+  const [activeCategory, setActiveCategory] = useState('Header');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingTool, setEditingTool] = useState<Tool | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const [formData, setFormData] = useState<Omit<Tool, "id">>({
-    u_Id: "",
-    name: "",
-    url: "",
-    des: "",
-    keyword: "",
-    category: "developerTools",
-  });
+  const [mode, setMode] = useState<string>();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [metadata, setMata] = useState<MetaData>();
+  const [formData, setFormData] = useState<fromDataType>();
+  const [loading, setLoading] = useState<boolean>();
 
   /* ===================== HELPERS ===================== */
-  const openModal = (tool?: Tool) => {
-    if (tool) {
-      setEditingTool(tool);
-      setFormData({ ...tool });
-    } else {
-      setEditingTool(null);
-      setFormData({
-        u_Id: "",
-        name: "",
-        url: "",
-        des: "",
-        keyword: "",
-        category: activeCategory === "all" ? "developerTools" : activeCategory,
-      });
-    }
+  const openModal = (tool?: fromDataType) => {
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
+    setFormData(undefined);
+    setMata(undefined);
+    setMode('');
     setIsModalOpen(false);
-    setEditingTool(null);
   };
-
-  const handleSubmit = () => {
-    if (!Object.values(formData).every(Boolean)) {
-      alert("Please fill all fields");
-      return;
-    }
-
-    if (editingTool) {
-      setTools((prev) =>
-        prev.map((t) =>
-          t.id === editingTool.id ? { ...formData, id: editingTool.id } : t
-        )
-      );
+  const handleSubmit = async () => {
+    setLoading(true);
+    const updatedFormData = {
+      ...formData,
+      metaData: metadata,
+    };
+    let result;
+    if (mode === 'edit') {
+      result = await updateRecord(updatedFormData.url_id, updatedFormData);
     } else {
-      setTools((prev) => [...prev, { ...formData, id: Date.now() }]);
+      result = await addNewRecord(updatedFormData);
     }
-
-    closeModal();
-  };
-
-  const handleDelete = (id: number) => {
-    if (confirm("Delete this tool?")) {
-      setTools((prev) => prev.filter((t) => t.id !== id));
+    if (result.success) {
+      toast.success(result.message);
+      closeModal();
+      setLoading(false);
+    } else {
+      toast.error(result.message);
+      setLoading(false);
     }
+    await getTableData(updatedFormData.category);
   };
-
+  // updateRecord(updatedFormData.url_id, updatedFormData)
   const filteredTools = tools.filter(
     (t) =>
-      (activeCategory === "all" || t.category === activeCategory) &&
-      (t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.u_Id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.des.toLowerCase().includes(searchTerm.toLowerCase()))
+      (activeCategory === 'all' || t.category === activeCategory) &&
+      ((t.name?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
+        (t.url_id?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
+        (t.des?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()))
   );
-
+  // console.log(filteredTools);
   const getDetails = async (id: string) => {
     setActiveCategory(id);
-    // alert(id)
-    const data = await getTableData(id) as any[];
+    const data = await getTableData(id);
+    // Ensure data is an array (handle QueryResult/OkPacket case)
+    const arr = Array.isArray(data) ? data : [];
     // Map database result to Tool[]
-    const mappedTools: Tool[] = data.map((item: any) => ({
+    const mappedTools: Tool[] = arr.map((item: any) => ({
       id: item.id,
-      u_Id: item.urlName,
-      name: item.name || "",
+      url_id: item.url_id,
+      urlName: item.urlName,
+      name: item.name || '',
       url: item.route,
       des: item.des,
       keyword: item.keyword,
-      metaData : item.metadata,
-      category: id === "all" ? "developerTools" : id,
+      metaData: item.metadata,
+      category: id === 'all' ? 'developerTools' : id,
     }));
     setTools(mappedTools);
-    console.log(mappedTools);
+    // console.log(mappedTools);
+  };
+  const getMeta = (metaData?: string | any) => {
+    if (!metaData) return null;
+
+    if (typeof metaData === 'string') {
+      try {
+        return JSON.parse(metaData);
+      } catch {
+        return null;
+      }
+    }
+
+    return metaData;
   };
 
-
-const handleEdit =(tooldata: Tool)=>{
-      openModal();
-      console.log(tooldata)
-}
-
-  const getCategoryName = (id: string) =>
-    categories.find((c) => c.id === id)?.name || id;
+  const handleEdit = (tooldata: fromDataType) => {
+    setMode('edit');
+    openModal();
+    let data = getMeta(tooldata.metaData);
+    setMata(data);
+    setFormData(tooldata);
+  };
+  const handleAdd = () => {
+    setMode('add');
+    openModal();
+  };
+  // const getCategoryName = (id: string) => categories.find((c) => c.id === id)?.name || id;
+  const generateRandomId = (length = 10) => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
 
   /* ===================== UI ===================== */
   return (
@@ -225,7 +162,7 @@ const handleEdit =(tooldata: Tool)=>{
       {/* ===================== SIDEBAR ===================== */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-black border-r dark:border-slate-800 transform transition-transform ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0`}
       >
         <div className="p-6 border-b dark:border-slate-800 bg-gradient-to-r from-blue-600 to-indigo-600">
@@ -235,21 +172,17 @@ const handleEdit =(tooldata: Tool)=>{
 
         <nav className="p-4 p-y-2 space-y-1">
           {categories.map((cat) => {
-            const Icon = cat.icon;
+            // const Icon =                                                                                                                                                                          cat.icon;
             const active = activeCategory === cat.id;
             return (
               <button
                 key={cat.id}
                 // onClick={() => setActiveCategory(cat.id)}
                 onClick={() => getDetails(cat.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition hover:cursor-pointer
-                  ${
-                    active
-                      ? "bg-blue-600 text-white"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800"
-                  }`}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition hover:cursor-pointer text-sm font-bold
+                  ${active ? 'bg-blue-600 text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'}`}
               >
-                <Icon size={18} />
+                {/* <FingerprintIcon /> */}
                 {cat.name}
               </button>
             );
@@ -262,15 +195,12 @@ const handleEdit =(tooldata: Tool)=>{
         {/* HEADER */}
         <div className="sticky top-0 z-30 bg-white dark:bg-black border-b dark:border-slate-800 px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="lg:hidden"
-            >
+            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="lg:hidden">
               <Menu />
             </button>
-            <h1 className="text-2xl font-bold">
+            {/* <h1 className="text-2xl font-bold">
               {getCategoryName(activeCategory)}
-            </h1>
+            </h1> */}
           </div>
 
           <div className="flex items-center gap-3">
@@ -278,11 +208,11 @@ const handleEdit =(tooldata: Tool)=>{
               onClick={toggleTheme}
               className="px-3 py-2 rounded-lg bg-gray-100 dark:bg-slate-800"
             >
-              {theme === "light" ? "🌙" : "☀️"}
+              {theme === 'light' ? '🌙' : '☀️'}
             </button>
             <button
-              onClick={() => openModal()}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+              onClick={() => handleAdd()}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 cursor-pointer"
             >
               <Plus size={18} /> Add Tool
             </button>
@@ -291,30 +221,130 @@ const handleEdit =(tooldata: Tool)=>{
 
         {/* CONTENT */}
         <div className="p-6">
-          <input
-            placeholder="Search tools..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full mb-6 px-4 py-3 rounded-xl bg-white dark:bg-slate-800 border dark:border-slate-700"
-          />
-
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredTools.map((tool) => (
               <div
                 key={tool.id}
-                className="bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-4 flex justify-between"
+                className="group relative overflow-hidden rounded-2xl
+      bg-white dark:bg-slate-900
+      border border-slate-200 dark:border-slate-800
+      shadow-sm hover:shadow-xl hover:-translate-y-1
+      transition-all duration-300"
               >
-                <div>
-                  <h3 className="font-bold">{tool.name}</h3>
-                  <p className="text-sm opacity-80">{tool.des}</p>
+                {/* Hover gradient */}
+                <div
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition
+        bg-gradient-to-br from-blue-500/5 via-indigo-500/5 to-purple-500/5"
+                />
+
+                {/* ACTIONS */}
+                <div className="absolute top-3 right-3 z-10 flex gap-2 opacity-0 group-hover:opacity-100 transition">
+                  <button
+                    onClick={() => handleEdit(tool)}
+                    className="p-2 rounded-lg bg-white dark:bg-slate-800 hover:bg-blue-600 hover:text-white hover:cursor-pointer"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button className="p-2 rounded-lg bg-white dark:bg-slate-800 hover:bg-red-600 hover:text-white hover:cursor-pointer">
+                    <Trash2Icon className="w-4 h-4" />
+                  </button>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => handleEdit(tool)}>
-                    <Edit2 size={12} />
-                  </button>
-                  <button onClick={() => handleDelete(tool.id)}>
-                    <Trash2 size={14} className="text-red-500" />
-                  </button>
+
+                {/* CONTENT */}
+                <div className="relative p-5 space-y-4">
+                  {/* TOOL INFO */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                      {tool.name || tool.urlName}
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
+                      {tool.des}
+                    </p>
+
+                    <div className="mt-2 text-xs text-slate-400">
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {tool.keyword.split(',').map((keyword: string, i: number) => (
+                          <span
+                            key={i}
+                            className="px-2.5 py-1 text-sm rounded-lg
+                                  bg-emerald-300 text-slate-900 italic
+                                  transition"
+                          >
+                            {keyword.trim()}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SEO INFO */}
+                  {(() => {
+                    const meta = getMeta(tool.metaData);
+
+                    if (!meta) return null;
+
+                    return (
+                      <div className="rounded-xl bg-slate-50 dark:bg-slate-800 p-3 space-y-1">
+                        <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                          SEO Metadata
+                        </h4>
+
+                        {meta.title && (
+                          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
+                            <span className="font-medium">Title:</span> {meta.title}
+                          </p>
+                        )}
+
+                        {meta.description && (
+                          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                            <span className="font-medium">Description:</span> {meta.description}
+                          </p>
+                        )}
+                        {meta.keywords && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {meta.keywords.split(',').map((keyword: string, i: number) => (
+                              <span
+                                key={i}
+                                className="px-2.5 py-1 text-xs rounded-lg
+                                  bg-green-100 text-slate-700 font-mono
+                                  transition"
+                              >
+                                {keyword.trim()}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* FOOTER */}
+                <div className="relative px-5 py-4 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                  <span className="text-xs px-3 py-1 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
+                    {tool.category}
+                  </span>
+                  <span className="text-xs text-slate-400">ID: {tool.url_id}</span>
+                  <div className="flex items-center gap-3 mt-3">
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                      Link
+                    </span>
+
+                    <Link
+                      href={(tool.route ?? tool.url) as string}
+                      target="_blank"
+                      className="group inline-flex items-center gap-2
+      px-3 py-1.5 rounded-lg
+      bg-slate-100 dark:bg-slate-800
+      text-sm text-blue-600 dark:text-blue-400
+      hover:bg-blue-50 dark:hover:bg-blue-900/30
+      transition"
+                    >
+                      <span className="truncate max-w-[200px]">{tool.route ?? tool.url}</span>
+
+                      <ExternalLink className="w-4 h-4 opacity-70 group-hover:opacity-100" />
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}
@@ -324,127 +354,232 @@ const handleEdit =(tooldata: Tool)=>{
 
       {/* ===================== MODAL ===================== */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-xl rounded-2xl">
-          <DialogHeader className="p-0">
-            <DialogTitle className="text-lg font-semibold">
-              {editingTool ? "Edit Tool" : "Add New Tool"}
-            </DialogTitle>
-          </DialogHeader>
-
-          {/* table name */}
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-muted-foreground">
-              Table Name
-            </label>
-
-            {/* <Select onValueChange={(value) => setTableName(value)}> */}
-            <Select>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select table name" />
-              </SelectTrigger>
-
-              <SelectContent>
-                {categories.map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    <div className="flex items-center gap-2">
-                      <item.icon className="h-4 w-4 text-muted-foreground" />
-                      <span>{item.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+          {/* HEADER */}
+          <div className="p-6 rounded-t-lg border-b-2">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                {mode == 'edit' ? (
+                  <>
+                    <Edit2 /> Edit Tool
+                  </>
+                ) : (
+                  <>
+                    <FolderCodeIcon /> Add New Tools
+                  </>
+                )}
+              </DialogTitle>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            {/* URL ID */}
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-muted-foreground">
-                URL ID
-              </label>
-              <Input placeholder="example-tool" />
+          {/* BODY */}
+          <div className="p-6 pt-0 space-y-5">
+            <div>
+              <label className="block text-sm font-semibold mb-2">Category</label>
+
+              <Select
+                disabled={mode === 'edit'}
+                value={formData?.category ?? ''}
+                onValueChange={(value) =>
+                  setFormData((prev: any) => ({ ...(prev ?? { category: 4 }), category: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  {categories
+                    .filter((cat) => cat.id !== 'all')
+                    .map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Tool Name */}
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-muted-foreground">
-                Tool Name
-              </label>
-              <Input placeholder="SQL to CSV Converter" />
+            {/* <div>
+              <label className="block text-sm font-semibold mb-2">Unique ID</label>
+              <Input
+                placeholder="e.g., ip-01"
+                value={formData?.url_id}
+                onChange={(e) =>
+                  setFormData((prev: any) => ({
+                    ...prev,
+                    url_id: e.target.value,
+                  }))
+                }
+              />
+              
+            </div> */}
+
+            <div>
+              <label className="block text-sm font-semibold mb-2">Unique ID</label>
+
+              <div className="flex gap-2">
+                <Input
+                  disabled={mode === 'edit'}
+                  placeholder="e.g., ip-01"
+                  value={formData?.url_id}
+                  onChange={(e) =>
+                    setFormData((prev: any) => ({
+                      ...prev,
+                      url_id: e.target.value,
+                    }))
+                  }
+                />
+                {mode !== 'edit' ? (
+                  <Button
+                    type="button"
+                    disabled={mode === 'edit'}
+                    variant="outline"
+                    className="cursor-pointer"
+                    onClick={() =>
+                      setFormData((prev: any) => ({
+                        ...prev,
+                        url_id: generateRandomId(10),
+                      }))
+                    }
+                  >
+                    Generate
+                  </Button>
+                ) : (
+                  ''
+                )}
+              </div>
             </div>
 
-            {/* Description */}
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-muted-foreground">
-                Tool Description
-              </label>
-              <Textarea
-                rows={3}
-                placeholder="Short description about this tool"
+            <div>
+              <label className="block text-sm font-semibold mb-2">Name</label>
+              <Input
+                placeholder="e.g., IP Tools"
+                value={formData?.urlName ?? ''}
+                onChange={(e) =>
+                  setFormData((prev: any) => ({
+                    ...prev,
+                    urlName: e.target.value,
+                  }))
+                }
               />
             </div>
 
-            {/* keyword  */}
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-muted-foreground">
-                Keyword
-              </label>
-              <Input placeholder="sql to csv, sql converter, csv generator" />
+            <div>
+              <label className="block text-sm font-semibold mb-2">URL</label>
+              <Input
+                placeholder="e.g., developmenttool/ip-tools"
+                value={formData?.route || formData?.url}
+                onChange={(e) =>
+                  setFormData((prev: any) => ({
+                    ...prev,
+                    route: e.target.value,
+                  }))
+                }
+              />
             </div>
 
-            {/* Route */}
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-muted-foreground">
-                Route Path
-              </label>
-              <Input placeholder="/sql-converters/sql-to-csv" />
+            <div>
+              <label className="block text-sm font-semibold mb-2">Description</label>
+              <Textarea
+                rows={2}
+                placeholder="Brief description of the tool..."
+                value={formData?.des}
+                onChange={(e) =>
+                  setFormData((prev: any) => ({
+                    ...prev,
+                    des: e.target.value,
+                  }))
+                }
+              />
             </div>
 
-            {/* SEO Section */}
-            <div className="border-t border-dashed border-black">
-              <h3 className="text-sm font-semibold mb-2">SEO Metadata</h3>
+            <div>
+              <label className="block text-sm font-semibold mb-2">Keywords</label>
+              <Input
+                placeholder="e.g., ip address, lookup, network"
+                value={formData?.keyword}
+                onChange={(e) =>
+                  setFormData((prev: any) => ({
+                    ...prev,
+                    keyword: e.target.value,
+                  }))
+                }
+              />
+            </div>
+            <div className="pt-4 border-t-2 border-dashed space-y-4">
+              <h5 className="text-sm font-bold text-center">SEO Meta Data</h5>
 
-              {/* Meta Title */}
-              <div className="space-y-1 mb-1">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Meta Title
-                </label>
-                <Input placeholder="SQL to CSV Converter Online Free Tool" />
-                <p className="text-xs text-muted-foreground">
-                  Recommended: 50–60 characters
-                </p>
-              </div>
-
-              {/* Meta Description */}
-              <div className="space-y-1 mb-1">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Meta Description
-                </label>
-                <Textarea
-                  rows={3}
-                  placeholder="Convert SQL queries into CSV format instantly with our free online tool."
+              {/* TITLE */}
+              <div>
+                <label className="block text-sm font-semibold mb-2">Title</label>
+                <Input
+                  value={metadata?.title ?? ''}
+                  placeholder="e.g., developmenttool/ip-tools"
+                  onChange={(e) =>
+                    setMata((prev) => ({
+                      ...prev,
+                      title: e.target.value,
+                    }))
+                  }
                 />
-                <p className="text-xs text-muted-foreground">
-                  Recommended: 150–160 characters
-                </p>
               </div>
 
-              {/* Meta Keywords */}
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Meta Keywords
-                </label>
-                <Input placeholder="sql to csv, sql converter, csv generator" />
+              {/* DESCRIPTION */}
+              <div>
+                <label className="block text-sm font-semibold mb-2">Description</label>
+                <Textarea
+                  rows={2}
+                  value={metadata?.description ?? ''}
+                  placeholder="Brief description of the tool..."
+                  onChange={(e) =>
+                    setMata((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                />
               </div>
+
+              {/* KEYWORDS (TAG INPUT) */}
+              <div>
+                <label className="block text-sm font-semibold mb-2">Keywords</label>
+
+                <div className="flex flex-wrap gap-2 p-2 border rounded-lg">
+                  <Input
+                    placeholder=" keyword ,"
+                    value={metadata?.keywords}
+                    onChange={(e) =>
+                      setMata((prev) => ({
+                        ...prev,
+                        keywords: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* FOOTER */}
+            <div className="flex gap-3 pt-4">
+              <Button onClick={handleSubmit} className="flex-1 cursor-pointer " disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : mode === 'edit' ? (
+                  'Update Tool'
+                ) : (
+                  'Create Tool'
+                )}
+              </Button>
+
+              <Button variant="secondary" className="flex-1" onClick={closeModal}>
+                Cancel
+              </Button>
             </div>
           </div>
-
-          <DialogFooter className="gap-2 pt-2">
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit}>Save Tool</Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

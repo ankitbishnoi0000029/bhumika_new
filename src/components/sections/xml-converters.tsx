@@ -177,7 +177,7 @@ export default function XmlConverters() {
       onOptionSelect={handleConverterChange}
       footerOptions={footerOptions}
     >
-      <SidebarContentWrapper selectedOption={selectedOption}>
+      <SidebarContentWrapper selectedOption={selectedOption as any}>
         <div className="mx-auto">
           <div className="mb-6">
             <h2 className="text-2xl font-bold mb-2">

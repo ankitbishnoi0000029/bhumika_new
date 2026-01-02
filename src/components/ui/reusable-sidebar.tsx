@@ -118,7 +118,7 @@ export function ReusableSidebar({
 }
 
 export interface SidebarContentProps {
-  selectedOption: SidebarOption | any
+  selectedOption: SidebarOption | undefined
   children?: ReactNode
   className?: string
 }

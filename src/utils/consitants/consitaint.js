@@ -526,6 +526,7 @@ export const category = [
   },
 ];
   // {
+
   //   name: 'Chart Tools', href: '/chart-tools',
   //   subcategories: [
   //     { name: 'Line Graph Maker', to: 'chart-tools/line-graph-maker' },
@@ -1731,3 +1732,34 @@ export const category = [
 //     ]
 //   }
 // ];
+   export const categories = [
+  // { id: 'header', name: 'Header', icon: "FlameKindling" },
+
+  { id: 'popular', name: 'Popular Tools', icon: "TrendingUp" },
+  { id: 'trendingtools', name: 'Trending Tools', icon: "Sparkles" },
+
+  { id: 'developertools', name: 'Developer Tools', icon: "Code" },
+  { id: 'utility', name: 'Utility Tools', icon: "Wrench" },
+
+  { id: 'encode_decode', name: 'Encode / Decode', icon: "Shield" },
+  { id: 'base64_tools', name: 'Base64 Tools', icon: "Layers" },
+
+  { id: 'html_converters', name: 'HTML Converters', icon: "FileText" },
+  { id: 'json_converters', name: 'JSON Converters', icon: "Braces" },
+  { id: 'xml_converters', name: 'XML Converters', icon: "FileText" },
+  { id: 'yaml_converters', name: 'YAML Converters', icon: "FileText" },
+
+  { id: 'sql_converters', name: 'SQL Converters', icon: "Database" },
+  // { id: "sql_url", name: "SQL URL Tools", icon: Link2 },
+
+  { id: 'image_tools', name: 'Image Tools', icon: "Image" },
+
+  { id: 'categories', name: 'Categories', icon: "Menu" },
+  { id: 'subcategories', name: 'Sub Categories', icon: "Menu" },
+
+  { id: 'navbar', name: 'Navbar', icon: "Menu" },
+ 
+
+  { id: 'nf', name: 'New Features', icon: "Sparkles" },
+];
+ 

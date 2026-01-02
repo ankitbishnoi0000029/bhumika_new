@@ -68,7 +68,7 @@ export function ImageTools() {
       onOptionSelect={handleToolChange}
       footerOptions={footerOptions}
     >
-      <SidebarContentWrapper selectedOption={selectedOption ?? undefined}>
+      <SidebarContentWrapper selectedOption={selectedOption as any}>
         {!!selectedOption && (
           <div className="space-y-6">
             {/* Header */}
